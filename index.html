@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XAU/USD · Live Brief</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#030310; color:#d8d8ec; font-family:'Segoe UI',system-ui,sans-serif; font-size:13px; }
+@keyframes pulse  { 0%,100%{transform:scale(1);opacity:.3} 50%{transform:scale(2.5);opacity:0} }
+@keyframes spin   { to{transform:rotate(360deg)} }
+@keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+@keyframes glow   { 0%,100%{opacity:.85} 50%{opacity:1;text-shadow:0 0 16px rgba(255,215,0,.6)} }
+@keyframes blink  { 0%,100%{opacity:1} 50%{opacity:.3} }
+::-webkit-scrollbar { width:3px; }
+::-webkit-scrollbar-track { background:#050510; }
+::-webkit-scrollbar-thumb { background:#1a1a2e; border-radius:2px; }
+
+/* ── LAYOUT ── */
+#app { min-height:100vh; }
+.topbar { display:flex; align-items:center; justify-content:space-between; padding:11px 18px; background:linear-gradient(90deg,#050512,#09091e,#050512); border-bottom:1px solid rgba(255,215,0,.12); }
+.logo { font-family:monospace; font-size:14px; font-weight:800; color:#FFD700; letter-spacing:.2em; animation:glow 3s ease-in-out infinite; }
+.sublogo { font-size:9px; color:#222238; letter-spacing:.1em; margin-top:2px; }
+.tabs { display:flex; border-bottom:1px solid #0e0e20; padding-left:16px; background:#050512; }
+.tab { padding:7px 18px; font-size:11px; font-weight:700; letter-spacing:.12em; background:transparent; border:none; border-bottom:2px solid transparent; color:#333358; cursor:pointer; }
+.tab.active { background:rgba(255,215,0,.08); border-bottom-color:#FFD700; color:#FFD700; }
+.content { padding:12px 16px 24px; }
+
+/* ── TICKERS ── */
+.tickers { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-bottom:10px; }
+.ticker { background:#07071a; border:1px solid #111126; border-radius:5px; padding:10px 14px; animation:fadeUp .4s ease; }
+.ticker-label { font-size:9px; color:#333358; letter-spacing:.12em; margin-bottom:5px; }
+.ticker-price { font-family:monospace; font-size:16px; font-weight:800; color:#d8d8ec; }
+.ticker-chg   { font-size:11px; font-weight:700; margin-top:4px; }
+.ticker-corr  { font-size:9px; margin-left:5px; opacity:.5; }
+.up { color:#00d26e; } .dn { color:#ff4466; } .neu { color:#ffb000; }
+
+/* ── GRID 3 COLS ── */
+.grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:8px; }
+.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px; }
+
+/* ── CARD ── */
+.card { background:#06061a; border:1px solid #111126; border-radius:6px; overflow:hidden; }
+.card-hdr { padding:8px 14px; background:#090920; border-bottom:1px solid #0e0e1e; display:flex; justify-content:space-between; align-items:center; }
+.card-title { font-size:10px; font-weight:800; letter-spacing:.18em; color:#FFD700; }
+.card-body { padding:13px 15px; }
+
+/* ── BIAIS ── */
+.biais-val { font-size:22px; font-weight:800; letter-spacing:.1em; margin-bottom:8px; }
+.dots { display:flex; gap:4px; margin-bottom:8px; }
+.dot { width:9px; height:9px; border-radius:50%; }
+.dot.on  { background:#FFD700; border:1px solid rgba(255,215,0,.5); }
+.dot.off { background:#111126; border:1px solid #1e1e36; }
+.biais-txt  { font-size:12px; color:#4e4e72; line-height:1.6; margin-bottom:8px; }
+.raison-box { padding:7px 10px; background:rgba(255,215,0,.04); border-left:2px solid rgba(255,215,0,.3); border-radius:0 3px 3px 0; font-size:11px; color:#b8a830; line-height:1.5; }
+
+/* ── NIVEAUX ── */
+.niveau-row { display:flex; justify-content:space-between; align-items:center; padding:4px 0; border-bottom:1px solid #0d0d1c; }
+.niveau-lbl { font-size:10px; color:#2e2e48; letter-spacing:.08em; }
+.niveau-val { font-family:monospace; font-size:13px; font-weight:700; }
+
+/* ── MACRO ── */
+.macro-txt    { font-size:12px; color:#6868a0; line-height:1.7; margin-bottom:10px; }
+.surveiller   { padding:7px 10px; background:rgba(255,215,0,.04); border-left:2px solid rgba(255,215,0,.35); border-radius:0 3px 3px 0; }
+.surv-lbl     { font-size:9px; color:#c8a000; letter-spacing:.15em; margin-bottom:3px; }
+.surv-val     { font-size:12px; color:#b8a020; line-height:1.5; }
+
+/* ── NEWS ── */
+.news-list { max-height:300px; overflow-y:auto; }
+.news-item { padding:9px 14px; border-bottom:1px solid #0b0b1c; cursor:pointer; transition:background .15s; }
+.news-item:hover { background:rgba(255,215,0,.025); }
+.news-meta { display:flex; align-items:center; gap:5px; margin-bottom:4px; }
+.news-src  { font-size:9px; color:#252540; margin-left:auto; font-family:monospace; }
+.news-title { font-size:13px; font-weight:600; color:#c8c8e0; line-height:1.4; }
+.news-detail { margin-top:6px; font-size:12px; color:#606080; line-height:1.6; border-left:2px solid rgba(255,215,0,.2); padding-left:8px; display:none; }
+.news-item.open .news-detail { display:block; }
+
+/* ── BADGES ── */
+.badge { font-size:9px; font-weight:800; letter-spacing:.08em; padding:2px 6px; border-radius:3px; white-space:nowrap; }
+.badge-high   { background:rgba(255,68,102,.15);  border:1px solid rgba(255,68,102,.5);  color:#ff4466; }
+.badge-medium { background:rgba(255,176,0,.15);   border:1px solid rgba(255,176,0,.5);   color:#ffb000; }
+.badge-low    { background:rgba(90,110,170,.15);  border:1px solid rgba(90,110,170,.4);  color:#7a8fc8; }
+.badge-bull   { background:rgba(0,210,110,.12);   border:1px solid rgba(0,210,110,.4);   color:#00d26e; }
+.badge-bear   { background:rgba(255,68,102,.12);  border:1px solid rgba(255,68,102,.4);  color:#ff4466; }
+.badge-neu    { background:rgba(200,160,0,.12);   border:1px solid rgba(200,160,0,.4);   color:#c8a000; }
+
+/* ── CALENDRIER ── */
+.cal-header { display:grid; grid-template-columns:70px 1fr 32px 58px 62px; gap:6px; padding:5px 14px; border-bottom:1px solid #0b0b1c; }
+.cal-hcell  { font-size:8px; color:#1e1e30; letter-spacing:.08em; }
+.cal-row    { display:grid; grid-template-columns:70px 1fr 32px 58px 62px; gap:6px; padding:7px 14px; border-bottom:1px solid #0b0b1c; font-size:11px; align-items:center; }
+.cal-list   { max-height:260px; overflow-y:auto; }
+.cal-time   { font-family:monospace; color:#FFD700; font-size:10px; }
+.cal-name   { color:#c8c8e0; font-weight:600; }
+.cal-ctry   { color:#333358; font-size:9px; margin-left:4px; }
+.cal-imp    { text-align:center; font-size:10px; }
+.cal-num    { font-family:monospace; text-align:right; }
+.cal-actual { color:#FFD700; font-weight:700; }
+.cal-cons   { color:#5a5a80; }
+
+/* ── HISTORIQUE ── */
+.hist-header { display:grid; grid-template-columns:130px 90px 80px 60px 1fr; gap:8px; padding:5px 14px; border-bottom:1px solid #0b0b1c; }
+.hist-hcell  { font-size:8px; color:#1e1e30; letter-spacing:.08em; }
+.hist-row    { display:grid; grid-template-columns:130px 90px 80px 60px 1fr; gap:8px; padding:7px 14px; border-bottom:1px solid #0b0b1c; font-size:11px; align-items:center; }
+.btn-correct { background:rgba(0,210,110,.12); border:1px solid rgba(0,210,110,.3); color:#00d26e; font-size:9px; padding:2px 7px; border-radius:3px; cursor:pointer; }
+.btn-faux    { background:rgba(255,68,102,.12); border:1px solid rgba(255,68,102,.3); color:#ff4466; font-size:9px; padding:2px 7px; border-radius:3px; cursor:pointer; margin-left:5px; }
+.btn-clear   { background:rgba(255,68,102,.1); border:1px solid rgba(255,68,102,.3); color:#ff4466; font-size:9px; padding:3px 8px; border-radius:3px; cursor:pointer; }
+.btn-refresh { background:linear-gradient(135deg,#1a1500,#2e2400); border:1px solid rgba(255,215,0,.4); color:#FFD700; font-weight:700; letter-spacing:.15em; padding:6px 14px; border-radius:4px; cursor:pointer; font-size:11px; }
+.btn-refresh:disabled { opacity:.4; cursor:not-allowed; }
+
+.accuracy { font-family:monospace; font-size:18px; font-weight:800; }
+.empty-msg { padding:28px; color:#1e1e30; font-size:12px; text-align:center; line-height:2; }
+.live-dot { width:6px; height:6px; border-radius:50%; background:#00d26e; display:inline-block; animation:blink 2s ease-in-out infinite; margin-right:6px; }
+.footer { display:flex; justify-content:space-between; font-size:9px; color:#18182a; font-family:monospace; padding:8px 2px 0; }
+.cd { font-family:monospace; font-size:9px; }
+.spinner { width:28px; height:28px; border:2px solid #131328; border-top-color:#FFD700; border-radius:50%; animation:spin .8s linear infinite; }
+.loading-box { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:50px; gap:14px; color:#1a1a2e; }
+.loading-txt { font-size:11px; letter-spacing:.2em; }
+.err-box { padding:11px; background:rgba(255,68,102,.08); border:1px solid rgba(255,68,102,.3); border-radius:5px; color:#ff4466; font-size:12px; margin-bottom:12px; }
+.pulsedot { position:relative; display:inline-block; width:8px; height:8px; flex-shrink:0; }
+.pulsedot span:first-child { position:absolute; inset:0; border-radius:50%; background:#FFD700; opacity:.3; animation:pulse 2s ease-in-out infinite; }
+.pulsedot span:last-child  { position:absolute; inset:25%; border-radius:50%; background:#FFD700; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="pulsedot"><span></span><span></span></div>
+      <div>
+        <div class="logo">XAU/USD · LIVE BRIEF</div>
+        <div class="sublogo" id="subDate">—</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:14px">
+      <div style="display:flex;gap:12px">
+        <div style="text-align:center">
+          <div class="cd" style="color:#1c1c30">PRIX</div>
+          <div class="cd" id="cdPrice" style="color:#444460">—</div>
+        </div>
+        <div style="text-align:center">
+          <div class="cd" style="color:#1c1c30">NEWS</div>
+          <div class="cd" id="cdNews"  style="color:#444460">—</div>
+        </div>
+        <div style="text-align:center">
+          <div class="cd" style="color:#1c1c30">CALENDRIER</div>
+          <div class="cd" id="cdCal"   style="color:#444460">—</div>
+        </div>
+      </div>
+      <button class="btn-refresh" id="btnRefresh" onclick="manualRefresh()">↻ TOUT ACTUALISER</button>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" id="tabBrief"   onclick="switchTab('brief')">BRIEF</button>
+    <button class="tab"        id="tabHistory" onclick="switchTab('history')">HISTORIQUE <span id="accuracyBadge"></span></button>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- BRIEF TAB -->
+    <div id="tabContentBrief">
+
+      <!-- 5 tickers -->
+      <div class="tickers">
+        <div class="ticker" id="tk-xau"><div class="ticker-label">XAUUSD · OR ($/oz)</div><div class="ticker-price" id="tkp-xau">—</div><div id="tkc-xau">—</div></div>
+        <div class="ticker" id="tk-xag"><div class="ticker-label">SILVER · XAG ($/oz)</div><div class="ticker-price" id="tkp-xag">—</div><div id="tkc-xag">—</div></div>
+        <div class="ticker" id="tk-dxy"><div class="ticker-label">DXY · DOLLAR INDEX</div><div class="ticker-price" id="tkp-dxy">—</div><div id="tkc-dxy">—</div></div>
+        <div class="ticker" id="tk-tnx"><div class="ticker-label">US10Y · TAUX 10 ANS</div><div class="ticker-price" id="tkp-tnx">—</div><div id="tkc-tnx">—</div></div>
+        <div class="ticker" id="tk-spx"><div class="ticker-label">S&P 500</div><div class="ticker-price" id="tkp-spx">—</div><div id="tkc-spx">—</div></div>
+      </div>
+
+      <!-- GRID 3 : Biais + Niveaux + Macro -->
+      <div class="grid3">
+        <!-- Biais -->
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">BIAIS DU JOUR</span><span id="biaisTs" style="font-size:9px;color:#1e1e34;font-family:monospace"></span></div>
+          <div class="card-body">
+            <div class="biais-val" id="biaisVal">—</div>
+            <div class="dots" id="biasDots"></div>
+            <div class="biais-txt" id="biaisTxt">Chargement en cours...</div>
+            <div class="raison-box" id="biaisRaison" style="display:none"></div>
+          </div>
+        </div>
+        <!-- Niveaux -->
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">NIVEAUX CLÉS</span></div>
+          <div class="card-body" id="niveauxBox">
+            <div style="color:#1e1e30;font-size:12px;padding:10px 0">Calcul en cours...</div>
+          </div>
+        </div>
+        <!-- Contexte macro -->
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">CONTEXTE MACRO</span></div>
+          <div class="card-body">
+            <div class="macro-txt" id="macroTxt">Chargement...</div>
+            <div class="surveiller" id="surv" style="display:none">
+              <div class="surv-lbl">⚑ À SURVEILLER</div>
+              <div class="surv-val" id="survVal"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GRID 2 : News + Calendrier -->
+      <div class="grid2">
+        <!-- News -->
+        <div class="card">
+          <div class="card-hdr">
+            <span class="card-title">NEWS & ACTUALITÉS</span>
+            <span style="font-size:9px;color:#1e1e34">clic = détails</span>
+          </div>
+          <div class="news-list" id="newsList">
+            <div class="empty-msg">Chargement des news...</div>
+          </div>
+        </div>
+        <!-- Calendrier -->
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">CALENDRIER ÉCONOMIQUE</span><span style="font-size:9px;color:#1e1e34">ForexFactory</span></div>
+          <div class="cal-header">
+            <div class="cal-hcell">HEURE</div>
+            <div class="cal-hcell">ÉVÉNEMENT</div>
+            <div class="cal-hcell" style="text-align:center">●</div>
+            <div class="cal-hcell" style="text-align:right">PRÉC.</div>
+            <div class="cal-hcell" style="text-align:right">CONS./ACT.</div>
+          </div>
+          <div class="cal-list" id="calList">
+            <div class="empty-msg">Chargement...</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /brief -->
+
+    <!-- HISTORY TAB -->
+    <div id="tabContentHistory" style="display:none">
+      <div class="card">
+        <div class="card-hdr">
+          <span class="card-title">HISTORIQUE DES BRIEFS</span>
+          <div style="display:flex;align-items:center;gap:12px">
+            <div id="accuracyBox" style="display:flex;align-items:center;gap:6px">
+              <span style="font-size:9px;color:#282840;letter-spacing:.1em">PRÉCISION</span>
+              <span class="accuracy" id="accuracyVal">—</span>
+            </div>
+            <button class="btn-clear" onclick="clearHistory()">Effacer tout</button>
+          </div>
+        </div>
+        <div class="hist-header">
+          <div class="hist-hcell">DATE/HEURE</div>
+          <div class="hist-hcell">BIAIS</div>
+          <div class="hist-hcell">PRIX OR</div>
+          <div class="hist-hcell">SCORE</div>
+          <div class="hist-hcell">RÉSULTAT</div>
+        </div>
+        <div id="histList"><div class="empty-msg">Aucun historique.<br><span style="font-size:11px">Les briefs sont sauvegardés automatiquement.</span></div></div>
+        <div style="padding:10px 16px;border-top:1px solid #0b0b1c;font-size:10px;color:#1e1e30;line-height:1.8">
+          Après chaque journée, note si le biais était correct pour calculer le taux de précision.
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <span><span class="live-dot"></span>Prix: Yahoo Finance · Calendrier: ForexFactory · News: RSS Kitco/Reuters · 100% sans clé API</span>
+      <span id="footerTs">—</span>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+//  CONFIG
+// ══════════════════════════════════════════════════════════════
+const CFG = {
+  PRICE_INTERVAL : 15 * 60 * 1000,
+  NEWS_INTERVAL  : 15 * 60 * 1000,
+  CAL_INTERVAL   : 60 * 60 * 1000,
+  PROXY          : "https://api.allorigins.win/get?url=",
+  PROXY2         : "https://corsproxy.io/?",
+  HISTORY_KEY    : "xau_brief_v3",
+  MAX_HISTORY    : 20,
+};
+
+// ══════════════════════════════════════════════════════════════
+//  ÉTAT
+// ══════════════════════════════════════════════════════════════
+let STATE = {
+  prices   : {},
+  news     : [],
+  calendar : [],
+  history  : [],
+  lastPrice: null,
+  lastNews : null,
+  lastCal  : null,
+  pCd: CFG.PRICE_INTERVAL/1000,
+  nCd: CFG.NEWS_INTERVAL/1000,
+  cCd: CFG.CAL_INTERVAL/1000,
+};
+
+// ══════════════════════════════════════════════════════════════
+//  FETCH PRIX — Yahoo Finance (sans clé)
+// ══════════════════════════════════════════════════════════════
+const YF_SYMS = { xau:"GC%3DF", xag:"SI%3DF", dxy:"DX%3DF", tnx:"%5ETNX", spx:"%5EGSPC" };
+
+async function fetchYahoo(sym) {
+  try {
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${sym}?interval=1m&range=1d`;
+    const r   = await fetch(CFG.PROXY + encodeURIComponent(url), { signal: AbortSignal.timeout(9000) });
+    const out = await r.json();
+    const meta = JSON.parse(out.contents)?.chart?.result?.[0]?.meta;
+    if (!meta) return null;
+    const price = meta.regularMarketPrice;
+    const prev  = meta.previousClose || meta.chartPreviousClose;
+    const chg   = prev ? +((price - prev) / prev * 100).toFixed(3) : 0;
+    return { price, chg, dir: chg >= 0 ? "up" : "dn" };
+  } catch { return null; }
+}
+
+async function loadPrices() {
+  const keys = Object.keys(YF_SYMS);
+  const vals = await Promise.all(Object.values(YF_SYMS).map(fetchYahoo));
+  keys.forEach((k, i) => { if (vals[i]) STATE.prices[k] = vals[i]; });
+  STATE.lastPrice = new Date();
+  renderTickers();
+  computeBias();
+}
+
+// ══════════════════════════════════════════════════════════════
+//  FETCH CALENDRIER — ForexFactory JSON (sans clé)
+// ══════════════════════════════════════════════════════════════
+async function loadCalendar() {
+  try {
+    const url = "https://nfs.faireconomy.media/ff_calendar_thisweek.json";
+    const r   = await fetch(CFG.PROXY + encodeURIComponent(url), { signal: AbortSignal.timeout(9000) });
+    const out = await r.json();
+    const raw = JSON.parse(out.contents);
+    const today = new Date().toISOString().slice(0, 10);
+    STATE.calendar = raw
+      .filter(e => e.date?.startsWith(today) && ["High","Medium"].includes(e.impact))
+      .slice(0, 14)
+      .map(e => ({
+        heure:     fmtTime(e.date),
+        event:     e.title,
+        pays:      (e.country || "").toUpperCase(),
+        impact:    e.impact === "High" ? "HIGH" : "MEDIUM",
+        precedent: e.previous || "—",
+        consensus: e.forecast || "—",
+        actual:    e.actual && e.actual !== "" ? e.actual : null,
+      }));
+    STATE.lastCal = new Date();
+    renderCalendar();
+    computeMacroContext();
+  } catch(e) {
+    document.getElementById("calList").innerHTML = `<div class="empty-msg">Calendrier indisponible</div>`;
+  }
+}
+
+function fmtTime(ds) {
+  try {
+    return new Date(ds).toLocaleTimeString("fr-FR", { hour:"2-digit", minute:"2-digit", timeZone:"Europe/Paris" }) + " CET";
+  } catch { return "—"; }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  FETCH NEWS — RSS Kitco + MarketWatch via rss2json (sans clé)
+// ══════════════════════════════════════════════════════════════
+const RSS_FEEDS = [
+  { url:"https://www.kitco.com/rss/ListingsRSS.aspx?ID=3", source:"Kitco" },
+  { url:"https://feeds.marketwatch.com/marketwatch/marketpulse/", source:"MarketWatch" },
+  { url:"https://www.investing.com/rss/news_25.rss", source:"Investing.com" },
+];
+
+const GOLD_KEYWORDS = ["gold","xau","bullion","fed","inflation","cpi","nfp","jobs","dollar","dxy","rate","treasury","yield","silver","geopolit","ukraine","iran","china","tariff","trade","recession","gdp","fomc","powell","economy","macro","risk","safe haven","commodity","metal","ounce","troy"];
+
+function scoreArticle(title, desc) {
+  const txt = (title + " " + (desc||"")).toLowerCase();
+  return GOLD_KEYWORDS.filter(k => txt.includes(k)).length;
+}
+
+function guessBias(title, desc) {
+  const txt = (title + " " + (desc||"")).toLowerCase();
+  const bullWords = ["rise","surge","rally","jump","gain","climb","high","bullish","buy","support","strong","boost","demand","safe haven","war","crisis","inflation","geopolit"];
+  const bearWords = ["fall","drop","decline","plunge","weaken","bearish","sell","resistance","low","dollar strong","rate hike","yield rise","taper","hawkish","recovery","risk on"];
+  const b = bullWords.filter(w => txt.includes(w)).length;
+  const r = bearWords.filter(w => txt.includes(w)).length;
+  return b > r ? "BULL" : r > b ? "BEAR" : "NEUTRAL";
+}
+
+function guessImpact(title, desc) {
+  const txt = (title + " " + (desc||"")).toLowerCase();
+  const high = ["fed","fomc","powell","nfp","cpi","inflation","rate decision","war","sanctions","crisis"];
+  const med  = ["gdp","pmi","ism","jobs","unemployment","treasury","yield","dollar"];
+  if (high.some(w => txt.includes(w))) return "HIGH";
+  if (med.some(w => txt.includes(w)))  return "MEDIUM";
+  return "LOW";
+}
+
+function timeAgo(dateStr) {
+  try {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const m = Math.floor(diff / 60000);
+    if (m < 1)  return "À l'instant";
+    if (m < 60) return `Il y a ${m}min`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `Il y a ${h}h`;
+    return `Il y a ${Math.floor(h/24)}j`;
+  } catch { return "—"; }
+}
+
+async function fetchRSS(feed) {
+  try {
+    const api = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed.url)}&count=20`;
+    const r   = await fetch(api, { signal: AbortSignal.timeout(8000) });
+    const d   = await r.json();
+    if (d.status !== "ok") return [];
+    return (d.items || [])
+      .map(item => ({
+        titre:  item.title || "",
+        desc:   item.description ? item.description.replace(/<[^>]*>/g,"").slice(0,200) : "",
+        url:    item.link || "",
+        date:   item.pubDate || "",
+        source: feed.source,
+        score:  scoreArticle(item.title, item.description),
+        impact: guessImpact(item.title, item.description),
+        biais:  guessBias(item.title, item.description),
+      }))
+      .filter(a => a.score > 0);
+  } catch { return []; }
+}
+
+async function loadNews() {
+  const results = await Promise.all(RSS_FEEDS.map(fetchRSS));
+  const all     = results.flat();
+  // Déduplique par titre similaire, trie par score puis date
+  const seen = new Set();
+  STATE.news = all
+    .filter(a => { const k = a.titre.slice(0,40); if (seen.has(k)) return false; seen.add(k); return true; })
+    .sort((a,b) => b.score - a.score || new Date(b.date) - new Date(a.date))
+    .slice(0, 12);
+  STATE.lastNews = new Date();
+  renderNews();
+  computeMacroContext();
+}
+
+// ══════════════════════════════════════════════════════════════
+//  CALCUL BIAIS — 100% local, 0 IA
+// ══════════════════════════════════════════════════════════════
+function computeBias() {
+  const p = STATE.prices;
+  if (!p.xau?.price) return;
+
+  let score = 0;
+  const reasons = [];
+
+  // DXY inverse
+  if (p.dxy?.dir === "dn")  { score += 2; reasons.push("DXY en baisse ✓"); }
+  if (p.dxy?.dir === "up")  { score -= 2; reasons.push("DXY en hausse ✗"); }
+
+  // US10Y inverse
+  if (p.tnx?.dir === "dn")  { score += 1; reasons.push("Taux 10Y en baisse ✓"); }
+  if (p.tnx?.dir === "up")  { score -= 1; reasons.push("Taux 10Y en hausse ✗"); }
+
+  // Silver confirme
+  if (p.xag?.dir === "up")  { score += 1; reasons.push("Silver en hausse ✓"); }
+  if (p.xag?.dir === "dn")  { score -= 1; reasons.push("Silver en baisse ✗"); }
+
+  // XAU momentum
+  if (p.xau?.chg > 0.5)    { score += 2; reasons.push("Or +0.5%+ aujourd'hui ✓"); }
+  else if (p.xau?.chg > 0) { score += 1; reasons.push("Or légèrement haussier ✓"); }
+  else if (p.xau?.chg < -0.5) { score -= 2; reasons.push("Or -0.5%+ aujourd'hui ✗"); }
+  else if (p.xau?.chg < 0) { score -= 1; reasons.push("Or légèrement baissier ✗"); }
+
+  // News sentiment
+  const bullNews = STATE.news.filter(n => n.biais === "BULL" && n.impact !== "LOW").length;
+  const bearNews = STATE.news.filter(n => n.biais === "BEAR" && n.impact !== "LOW").length;
+  if (bullNews > bearNews) { score += 1; reasons.push(`${bullNews} news haussières ✓`); }
+  if (bearNews > bullNews) { score -= 1; reasons.push(`${bearNews} news baissières ✗`); }
+
+  // Calendrier: events HIGH imminent?
+  const highEvents = STATE.calendar.filter(e => e.impact === "HIGH");
+  if (highEvents.length > 0) reasons.push(`⚑ ${highEvents.length} event(s) HIGH aujourd'hui`);
+
+  // Score → biais
+  const clampedScore = Math.min(5, Math.max(0, Math.round((score + 7) / 14 * 5)));
+  const biais  = score >= 2 ? "HAUSSIER" : score <= -2 ? "BAISSIER" : "NEUTRE";
+  const resume = score >= 2 ? "Conditions favorables à la hausse de l'or." :
+                 score <= -2 ? "Pression vendeuse sur le métal jaune." :
+                 "Marché sans tendance claire, range probable.";
+
+  // Niveaux pivot basés sur le prix live
+  const xau = p.xau.price;
+  const atr  = xau * 0.008; // ATR approximatif ~0.8%
+  const niveaux = {
+    r2:    (xau + atr * 2).toFixed(2),
+    r1:    (xau + atr).toFixed(2),
+    pivot: (xau).toFixed(2),
+    s1:    (xau - atr).toFixed(2),
+    s2:    (xau - atr * 2).toFixed(2),
+  };
+
+  const raison = reasons.slice(0,3).join(" · ");
+
+  renderBiais({ biais, score: clampedScore, resume, raison, niveaux });
+  saveToHistory({ biais, score: clampedScore, xau: xau.toFixed(2) });
+}
+
+function computeMacroContext() {
+  const p = STATE.prices;
+  const lines = [];
+
+  if (p.dxy?.price) {
+    const dir = p.dxy.dir === "up" ? "en hausse" : "en baisse";
+    lines.push(`Le dollar (DXY ${p.dxy.price.toFixed(3)}) est ${dir} (${p.dxy.chg > 0 ? "+" : ""}${p.dxy.chg.toFixed(2)}%), ${p.dxy.dir === "up" ? "pression sur le gold" : "soutien au gold"}.`);
+  }
+  if (p.tnx?.price) {
+    const dir = p.tnx.dir === "up" ? "montent" : "baissent";
+    lines.push(`Les taux US 10 ans (${p.tnx.price.toFixed(3)}%) ${dir} — ${p.tnx.dir === "up" ? "négatif pour l'or" : "positif pour l'or"}.`);
+  }
+  if (p.spx?.price) {
+    const dir = p.spx.dir === "up" ? "en hausse" : "en baisse";
+    lines.push(`S&P500 ${dir} (${p.spx.chg > 0 ? "+" : ""}${p.spx.chg.toFixed(2)}%) — ${p.spx.dir === "up" ? "appétit pour le risque" : "aversion au risque"}.`);
+  }
+
+  const highCal = STATE.calendar.filter(e => e.impact === "HIGH");
+  let surv = null;
+  if (highCal.length > 0) {
+    surv = `${highCal[0].heure} — ${highCal[0].event} (${highCal[0].pays}) : précédent ${highCal[0].precedent}, consensus ${highCal[0].consensus}`;
+  }
+
+  document.getElementById("macroTxt").textContent = lines.join(" ") || "Données en chargement...";
+  const survEl = document.getElementById("surv");
+  if (surv) {
+    survEl.style.display = "block";
+    document.getElementById("survVal").textContent = surv;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  RENDER
+// ══════════════════════════════════════════════════════════════
+function renderTickers() {
+  const defs = [
+    { k:"xau", id:"xau", inv:false, unit:"$" },
+    { k:"xag", id:"xag", inv:false, unit:"$" },
+    { k:"dxy", id:"dxy", inv:true,  unit:""  },
+    { k:"tnx", id:"tnx", inv:true,  unit:"%"  },
+    { k:"spx", id:"spx", inv:false, unit:""  },
+  ];
+  defs.forEach(({ k, id, inv, unit }) => {
+    const d = STATE.prices[k];
+    if (!d) return;
+    const fmt = d.price >= 100 ? d.price.toFixed(2) : d.price.toFixed(3);
+    document.getElementById(`tkp-${id}`).textContent = fmt + (unit ? " " + unit : "");
+    const up = d.dir === "up";
+    const bullGold = inv ? !up : up;
+    const cls  = bullGold ? "up" : "dn";
+    const corr = inv ? (bullGold ? "→ gold+" : "→ gold−") : "";
+    document.getElementById(`tkc-${id}`).innerHTML =
+      `<span class="ticker-chg ${cls}">${up?"▲":"▼"} ${Math.abs(d.chg).toFixed(2)}%</span>`+
+      (corr ? `<span class="ticker-corr ${cls}">${corr}</span>` : "");
+  });
+}
+
+function renderBiais({ biais, score, resume, raison, niveaux }) {
+  const color = biais==="HAUSSIER"?"#00d26e":biais==="BAISSIER"?"#ff4466":"#ffb000";
+  const icon  = biais==="HAUSSIER"?"▲":biais==="BAISSIER"?"▼":"◆";
+  const el = document.getElementById("biaisVal");
+  el.textContent = `${icon} ${biais}`;
+  el.style.color = color;
+
+  const dotsEl = document.getElementById("biasDots");
+  dotsEl.innerHTML = Array.from({length:5},(_,i) =>
+    `<div class="dot ${i<score?"on":"off"}"></div>`
+  ).join("");
+
+  document.getElementById("biaisTxt").textContent = resume;
+  document.getElementById("biaisTs").textContent  = "Calc. " + new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
+
+  if (raison) {
+    const r = document.getElementById("biaisRaison");
+    r.style.display = "block";
+    r.textContent   = raison;
+  }
+
+  // Niveaux
+  const nBox = document.getElementById("niveauxBox");
+  nBox.innerHTML = [
+    ["r2","R2","#ff2244"],["r1","R1","#ff6677"],["pivot","PIVOT","#FFD700"],
+    ["s1","S1","#77ffaa"],["s2","S2","#33ff77"],
+  ].map(([k,l,c]) =>
+    `<div class="niveau-row">
+       <span class="niveau-lbl">${l}</span>
+       <span class="niveau-val" style="color:${c}">${niveaux[k] || "—"}</span>
+     </div>`
+  ).join("");
+}
+
+function renderNews() {
+  const el = document.getElementById("newsList");
+  if (!STATE.news.length) {
+    el.innerHTML = '<div class="empty-msg">Aucune news trouvée<br><span style="font-size:11px">Vérifie ta connexion internet</span></div>';
+    return;
+  }
+  el.innerHTML = STATE.news.map((n, i) => {
+    const impCls  = n.impact === "HIGH" ? "badge-high" : n.impact === "MEDIUM" ? "badge-medium" : "badge-low";
+    const biasCls = n.biais  === "BULL" ? "badge-bull" : n.biais  === "BEAR"   ? "badge-bear"   : "badge-neu";
+    const biasLbl = n.biais  === "BULL" ? "▲ BULL"     : n.biais  === "BEAR"   ? "▼ BEAR"       : "◆ NEU";
+    return `<div class="news-item" onclick="this.classList.toggle('open')" style="animation:fadeUp .35s ease ${i*.05}s both">
+      <div class="news-meta">
+        <span class="badge ${impCls}">${n.impact}</span>
+        <span class="badge ${biasCls}">${biasLbl}</span>
+        <span class="news-src">${timeAgo(n.date)} · ${n.source}</span>
+      </div>
+      <div class="news-title">${n.titre}</div>
+      <div class="news-detail">${n.desc || "—"}${n.url ? ` <a href="${n.url}" target="_blank" style="color:#FFD700;font-size:11px;margin-left:4px">→ Lire</a>` : ""}</div>
+    </div>`;
+  }).join("");
+}
+
+function renderCalendar() {
+  const el = document.getElementById("calList");
+  if (!STATE.calendar.length) {
+    el.innerHTML = '<div class="empty-msg">Aucun événement HIGH/MEDIUM aujourd\'hui</div>';
+    return;
+  }
+  el.innerHTML = STATE.calendar.map((ev, i) => {
+    const impColor = ev.impact === "HIGH" ? "#ff4466" : "#ffb000";
+    const dots     = ev.impact === "HIGH" ? "●●●" : "●●";
+    const hasAct   = ev.actual && ev.actual !== "—";
+    return `<div class="cal-row" style="animation:fadeUp .3s ease ${i*.04}s both">
+      <span class="cal-time">${ev.heure}</span>
+      <div><span class="cal-name">${ev.event}</span><span class="cal-ctry">${ev.pays}</span></div>
+      <span class="cal-imp" style="color:${impColor}">${dots}</span>
+      <span class="cal-num" style="color:#444460">${ev.precedent}</span>
+      <span class="cal-num ${hasAct?"cal-actual":"cal-cons"}">${hasAct ? ev.actual : (ev.consensus||"—")}</span>
+    </div>`;
+  }).join("");
+}
+
+// ══════════════════════════════════════════════════════════════
+//  HISTORIQUE
+// ══════════════════════════════════════════════════════════════
+function loadStoredHistory() {
+  try { STATE.history = JSON.parse(localStorage.getItem(CFG.HISTORY_KEY) || "[]"); }
+  catch { STATE.history = []; }
+}
+
+let lastSavedTs = 0;
+function saveToHistory({ biais, score, xau }) {
+  if (Date.now() - lastSavedTs < CFG.NEWS_INTERVAL) return; // 1 entrée / 15 min max
+  lastSavedTs = Date.now();
+  const entry = { ts: Date.now(), date: new Date().toLocaleString("fr-FR"), biais, score, xau, correct: null };
+  STATE.history.unshift(entry);
+  if (STATE.history.length > CFG.MAX_HISTORY) STATE.history.pop();
+  try { localStorage.setItem(CFG.HISTORY_KEY, JSON.stringify(STATE.history)); } catch {}
+  renderHistory();
+}
+
+function markHistory(idx, val) {
+  STATE.history[idx].correct = val;
+  try { localStorage.setItem(CFG.HISTORY_KEY, JSON.stringify(STATE.history)); } catch {}
+  renderHistory();
+}
+
+function clearHistory() {
+  if (!confirm("Effacer tout l'historique ?")) return;
+  STATE.history = [];
+  lastSavedTs   = 0;
+  localStorage.removeItem(CFG.HISTORY_KEY);
+  renderHistory();
+}
+
+function calcAccuracy() {
+  const rated = STATE.history.filter(h => h.correct !== null);
+  if (!rated.length) return null;
+  return Math.round(rated.filter(h => h.correct === true).length / rated.length * 100);
+}
+
+function renderHistory() {
+  const acc = calcAccuracy();
+  const accEl = document.getElementById("accuracyVal");
+  const badgeEl = document.getElementById("accuracyBadge");
+  if (acc !== null) {
+    const c = acc >= 60 ? "#00d26e" : acc >= 40 ? "#ffb000" : "#ff4466";
+    accEl.textContent  = acc + "%";
+    accEl.style.color  = c;
+    badgeEl.innerHTML  = `<span style="margin-left:4px;color:${c}">${acc}%</span>`;
+  } else {
+    accEl.textContent = "—";
+    badgeEl.innerHTML = "";
+  }
+  const el = document.getElementById("histList");
+  if (!STATE.history.length) {
+    el.innerHTML = '<div class="empty-msg">Aucun historique.<br><span style="font-size:11px">Les briefs sont sauvegardés automatiquement.</span></div>';
+    return;
+  }
+  el.innerHTML = STATE.history.map((entry, i) => {
+    const bc = entry.biais==="HAUSSIER"?"#00d26e":entry.biais==="BAISSIER"?"#ff4466":"#ffb000";
+    const icon = entry.biais==="HAUSSIER"?"▲":entry.biais==="BAISSIER"?"▼":"◆";
+    const dotsHtml = Array.from({length:5},(_,j)=>
+      `<div class="dot ${j<(entry.score||0)?"on":"off"}" style="width:7px;height:7px"></div>`
+    ).join("");
+    const resultHtml = entry.correct === null
+      ? `<button class="btn-correct" onclick="markHistory(${i},true)">✓ Correct</button><button class="btn-faux" onclick="markHistory(${i},false)">✗ Faux</button>`
+      : `<span style="color:${entry.correct?"#00d26e":"#ff4466"};font-weight:700">${entry.correct?"✓ Correct":"✗ Faux"}</span>`;
+    return `<div class="hist-row" style="animation:fadeUp .3s ease ${i*.03}s both">
+      <span style="color:#333358;font-size:10px">${entry.date}</span>
+      <span style="color:${bc};font-weight:700">${icon} ${(entry.biais||"").slice(0,7)}</span>
+      <span style="font-family:monospace;color:#8888a8;font-size:10px">${entry.xau?"$"+entry.xau:"—"}</span>
+      <div style="display:flex;gap:3px">${dotsHtml}</div>
+      <div>${resultHtml}</div>
+    </div>`;
+  }).join("");
+}
+
+// ══════════════════════════════════════════════════════════════
+//  COUNTDOWNS + HEADER
+// ══════════════════════════════════════════════════════════════
+function fmtCd(s) { return `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`; }
+
+function updateHeader() {
+  const now = new Date();
+  const h   = now.getUTCHours();
+  const session = h>=13&&h<22?"🗽 NY":h>=7&&h<16?"🏦 LDN":h>=0&&h<8?"🌏 ASIE":"🌙 OFF";
+  document.getElementById("subDate").textContent =
+    now.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"}).toUpperCase() + " · " + session;
+  document.getElementById("cdPrice").textContent = fmtCd(STATE.pCd);
+  document.getElementById("cdNews").textContent  = fmtCd(STATE.nCd);
+  document.getElementById("cdCal").textContent   = fmtCd(STATE.cCd);
+  document.getElementById("footerTs").textContent =
+    `Prix: ${STATE.lastPrice ? STATE.lastPrice.toLocaleTimeString("fr-FR") : "—"} · News: ${STATE.lastNews ? STATE.lastNews.toLocaleTimeString("fr-FR") : "—"}`;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  TABS
+// ══════════════════════════════════════════════════════════════
+function switchTab(t) {
+  document.getElementById("tabContentBrief").style.display   = t==="brief"   ? "" : "none";
+  document.getElementById("tabContentHistory").style.display = t==="history" ? "" : "none";
+  document.getElementById("tabBrief").classList.toggle("active",   t==="brief");
+  document.getElementById("tabHistory").classList.toggle("active", t==="history");
+}
+
+// ══════════════════════════════════════════════════════════════
+//  INIT + TIMERS
+// ══════════════════════════════════════════════════════════════
+async function manualRefresh() {
+  document.getElementById("btnRefresh").disabled = true;
+  document.getElementById("btnRefresh").textContent = "⟳ …";
+  await Promise.all([loadPrices(), loadNews(), loadCalendar()]);
+  document.getElementById("btnRefresh").disabled = false;
+  document.getElementById("btnRefresh").textContent = "↻ TOUT ACTUALISER";
+}
+
+(async function init() {
+  loadStoredHistory();
+  renderHistory();
+  updateHeader();
+
+  // Chargement initial en parallèle
+  await Promise.all([loadPrices(), loadNews(), loadCalendar()]);
+
+  // Timers auto
+  setInterval(loadPrices,   CFG.PRICE_INTERVAL);
+  setInterval(loadNews,     CFG.NEWS_INTERVAL);
+  setInterval(loadCalendar, CFG.CAL_INTERVAL);
+
+  // Countdown ticker
+  setInterval(() => {
+    STATE.pCd = STATE.pCd <= 1 ? CFG.PRICE_INTERVAL/1000 : STATE.pCd - 1;
+    STATE.nCd = STATE.nCd <= 1 ? CFG.NEWS_INTERVAL/1000  : STATE.nCd - 1;
+    STATE.cCd = STATE.cCd <= 1 ? CFG.CAL_INTERVAL/1000   : STATE.cCd - 1;
+    updateHeader();
+  }, 1000);
+})();
+</script>
+</body>
+</html>
